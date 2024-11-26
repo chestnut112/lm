@@ -267,6 +267,116 @@ namespace arvin
     m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
   }
 
-  
+  void Logger::setFormatter(LogFormatter::ptr val)
+  {
+    MutexType::Lock lock(m_mutex);
+    m_formatter = val;
+    for (auto &i : m_appenders)
+    {
+      MutexType::Lock ll(i->m_mutex);
+      if (!i->m_hasFormatter)
+      {
+        i->m_formatter = m_formatter;
+      }
+    }
+  }
 
+  void Logger::setFormatter(const std::string &val)
+  {
+    std::cout << "---" << val << std::endl;
+    arvin::LogFormatter::ptr new_val(new arvin::LogFormatter(val));
+    if (new_val->isError())
+    {
+      std::cout << "Logger setFormatter name=" << m_name
+                << " value=" << val << " invalid formatter"
+                << std::endl;
+      return;
+    }
+    // m_formatter = new_val;
+    setFormatter(new_val);
+  }
+
+  std::string Logger::toYamlString()
+  {
+    MutexType::Lock lock(m_mutex);
+    YAML::Node node;
+    node["name"] = m_name;
+    if (m_level != LogLevel::UNKNOW)
+    {
+      node["level"] = LogLevel::ToString(m_level);
+    }
+    if (m_formatter)
+    {
+      node["formatter"] = m_formatter->getPattern();
+    }
+
+    for (auto &i : m_appenders)
+    {
+      node["appenders"].push_back(YAML::Load(i->toYamlString()));
+    }
+    std::stringstream ss;
+    ss << node;
+    return ss.str();
+  }
+
+  LogFormatter::ptr Logger::getFormatter()
+  {
+    MutexType::Lock lock(m_mutex);
+    return m_formatter;
+  }
+
+  void Logger::addAppender(LogAppender::ptr appender)
+  {
+    MutexType::Lock lock(m_mutex);
+    if (!appender->getFormatter())
+    {
+      MutexType::Lock ll(appender->m_mutex);
+      appender->m_formatter = m_formatter;
+    }
+    m_appenders.push_back(appender);
+  }
+
+  void Logger::delAppender(LogAppender::ptr appender)
+  {
+    MutexType::Lock lock(m_mutex);
+    for (auto it = m_appenders.begin();
+         it != m_appenders.end(); ++it)
+    {
+      if (*it == appender)
+      {
+        m_appenders.erase(it);
+        break;
+      }
+    }
+  }
+
+  void Logger::clearAppenders()
+  {
+    MutexType::Lock lock(m_mutex);
+    m_appenders.clear();
+  }
+
+  void Logger::log(LogLevel::Level level, LogEvent::ptr event)
+  {
+    if (level >= m_level)
+    {
+    }
+  }
+  std::string StdoutLogAppender::toYamlString()
+  {
+    MutexType::Lock lock(m_mutex);
+    YAML::Node node;
+    node["type"] = "StdoutLogAppender";
+    if (m_level != LogLevel::UNKNOW)
+    {
+      node["level"] = LogLevel::ToString(m_level);
+    }
+    if (m_hasFormatter && m_formatter)
+    {
+      node["formatter"] = m_formatter->getPattern();
+    }
+    std::stringstream ss;
+    ss << node;
+    return ss.str();
+  }
 }
