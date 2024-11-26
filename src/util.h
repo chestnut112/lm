@@ -9,7 +9,7 @@
 namespace arvin
 {
   // 获取线程ID
-pid_t GetTreadId();
+pid_t GetThreadId();
 
 // 获取协程ID
 uint32_t GetFiberId();
