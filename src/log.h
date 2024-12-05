@@ -13,6 +13,7 @@
 #include "thread.h"
 #include "config.h"
 
+
 /**
  * @brief 使用流式方式将日志级别level的日志写入到logger
  */
@@ -89,7 +90,7 @@
 /**
  * @brief 获取name的日志器
  */
-#define SYLAR_LOG_NAME(name) arvin::LoggerMgr::GetInstance()->getLogger(name)
+#define ARVIN_LOG_NAME(name) arvin::LoggerMgr::GetInstance()->getLogger(name)
 
 namespace arvin {
 
