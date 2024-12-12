@@ -7,6 +7,7 @@
 
 namespace arvin {
 static Logger::ptr g_logger = ARVIN_LOG_NAME("system");
+
 /// 全局静态变量，用于生成协程id
 static std::atomic<uint64_t> s_fiber_id{0};
 /// 全局静态变量，用于统计当前的协程数
@@ -118,6 +119,123 @@ void Fiber::call() {
 
 
 
-void Fiber::SetThis(Fiber *f) { t_fiber = f; }
+void Fiber::back() {
+    SetThis(t_thread_Fiber.get());
+    if(swapcontext(&m_ctx, &t_thread_Fiber->m_ctx)) {
+        //ARVIN_ASSERT2(false, "swapcontext");
+    }
+}
+
+//切换到当前协程执行
+void Fiber::swapIn() {
+    // SetThis(this);
+    // //ARVIN_ASSERT(m_state != EXEC);
+    // m_state = EXEC;
+    // if(swapcontext(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
+    //     //ARVIN_ASSERT2(false, "swapcontext");
+    // }
+}
+
+//切换到后台执行
+void Fiber::swapOut() {
+    // SetThis(Scheduler::GetMainFiber());
+    // if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
+    //     //ARVIN_ASSERT2(false, "swapcontext");
+    // }
+}
+
+//设置当前协程
+void Fiber::SetThis(Fiber* f) {
+    t_fiber = f;
+}
+
+//返回当前协程
+Fiber::ptr Fiber::GetThis() {
+    if(t_fiber) {
+        return t_fiber->shared_from_this();
+    }
+    Fiber::ptr main_fiber(new Fiber);
+    //ARVIN_ASSERT(t_fiber == main_fiber.get());
+    t_thread_Fiber = main_fiber;
+    return t_fiber->shared_from_this();
+}
+
+//协程切换到后台，并且设置为Ready状态
+void Fiber::YieldToReady() {
+    Fiber::ptr cur = GetThis();
+    //ARVIN_ASSERT(cur->m_state == EXEC);
+    cur->m_state = READY;
+    cur->swapOut();
+}
+
+//协程切换到后台，并且设置为Hold状态
+void Fiber::YieldToHold() {
+    Fiber::ptr cur = GetThis();
+    //ARVIN_ASSERT(cur->m_state == EXEC);
+    //cur->m_state = HOLD;
+    cur->swapOut();
+}
+
+//总协程数
+uint64_t Fiber::TotalFibers() {
+    return s_fiber_count;
+}
+
+void Fiber::MainFunc() {
+    Fiber::ptr cur = GetThis();
+    //ARVIN_ASSERT(cur);
+    try {
+        cur->m_cb();
+        cur->m_cb = nullptr;
+        cur->m_state = TERM;
+    } catch (std::exception& ex) {
+        cur->m_state = EXCEPT;
+        ARVIN_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what()
+            << " fiber_id=" << cur->getId()
+            << std::endl
+            << arvin::BacktraceToString();
+    } catch (...) {
+        cur->m_state = EXCEPT;
+        ARVIN_LOG_ERROR(g_logger) << "Fiber Except"
+            << " fiber_id=" << cur->getId()
+            << std::endl
+            << arvin::BacktraceToString();
+    }
+
+    auto raw_ptr = cur.get();
+    cur.reset();
+    raw_ptr->swapOut();
+
+   // ARVIN_ASSERT2(false, "never reach fiber_id=" + std::to_string(raw_ptr->getId()));
+}
+
+void Fiber::CallerMainFunc() {
+    Fiber::ptr cur = GetThis();
+    //ARVIN_ASSERT(cur);
+    try {
+        cur->m_cb();
+        cur->m_cb = nullptr;
+        cur->m_state = TERM;
+    } catch (std::exception& ex) {
+        cur->m_state = EXCEPT;
+        ARVIN_LOG_ERROR(g_logger) << "Fiber Except: " << ex.what()
+            << " fiber_id=" << cur->getId()
+            << std::endl
+            << arvin::BacktraceToString();
+    } catch (...) {
+        cur->m_state = EXCEPT;
+        ARVIN_LOG_ERROR(g_logger) << "Fiber Except"
+            << " fiber_id=" << cur->getId()
+            << std::endl
+            << arvin::BacktraceToString();
+    }
+
+    auto raw_ptr = cur.get();
+    cur.reset();
+    raw_ptr->back();
+    //ARVIN_ASSERT2(false, "never reach fiber_id=" + std::to_string(raw_ptr->getId()));
+
+}
+
 
 } // namespace arvin
