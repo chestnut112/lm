@@ -7,11 +7,17 @@
 #include <fstream>
 #include <vector>
 #include <stdarg.h>
+#include <cstddef>
 #include <map>
+#include <yaml-cpp/yaml.h>
+#include <stddef.h> 
+#include <unistd.h>
+#include <stdlib.h>
 #include "util.h"
 #include "singleton.h"
 #include "thread.h"
 #include "config.h"
+
 
 
 /**
@@ -606,7 +612,5 @@ private:
     Logger::ptr m_root;
 };
 
-/// 日志器管理类单例模式
 typedef arvin::Singleton<LoggerManager> LoggerMgr;
-
 }
