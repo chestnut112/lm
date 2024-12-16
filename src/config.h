@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <yaml-cpp/yaml.h>
+#include "log.h"
 
 namespace arvin {
 
@@ -330,10 +330,12 @@ public:
       RWMutexType::ReadLock lock(m_mutex);
       return ToStr()(m_val);
     } catch (std::exception &e) {
+      /*
       ARVIN_LOG_ERROR(ARVIN_LOG_ROOT())
           << "ConfigVar::toString exception " << e.what()
           << " convert: " << TypeToName<T>() << " to string"
           << " name=" << m_name;
+          */
     }
     return "";
   }
@@ -346,10 +348,12 @@ public:
     try {
       setValue(FromStr()(val));
     } catch (std::exception &e) {
+      /*
       ARVIN_LOG_ERROR(ARVIN_LOG_ROOT())
           << "ConfigVar::fromString exception " << e.what()
           << " convert: string to " << TypeToName<T>() << " name=" << m_name
           << " - " << val;
+          */
     }
     return false;
   }
@@ -460,21 +464,24 @@ public:
     if (it != GetDatas().end()) {
       auto tmp = std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
       if (tmp) {
-        ARVIN_LOG_INFO(ARVIN_LOG_ROOT()) << "Lookup name=" << name << " exists";
+       // ARVIN_LOG_INFO(ARVIN_LOG_ROOT()) << "Lookup name=" << name << " exists";
         return tmp;
       } else {
+        /*
         ARVIN_LOG_ERROR(ARVIN_LOG_ROOT())
             << "Lookup name=" << name << " exists but type not "
             << TypeToName<T>() << " real_type=" << it->second->getTypeName()
             << " " << it->second->toString();
-        return nullptr;
+            */
       }
     }
 
     if (name.find_first_not_of("abcdefghikjlmnopqrstuvwxyz._012345678") !=
         std::string::npos) {
+          /*
       ARVIN_LOG_ERROR(ARVIN_LOG_ROOT()) << "Lookup name invalid " << name;
       throw std::invalid_argument(name);
+      */
     }
 
     typename ConfigVar<T>::ptr v(

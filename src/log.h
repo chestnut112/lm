@@ -16,7 +16,7 @@
 #include "util.h"
 #include "singleton.h"
 #include "thread.h"
-#include "config.h"
+//#include "config.h"
 
 
 
@@ -144,7 +144,8 @@ public:
  */
 class LogEvent {
 public:
-    typedef std::shared_ptr<LogEvent> ptr;
+    //typedef std::shared_ptr<LogEvent> ptr;
+    using ptr=std::shared_ptr<LogEvent>;
     /**
      * @brief 构造函数
      * @param[in] logger 日志器
