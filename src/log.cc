@@ -665,4 +665,21 @@ namespace arvin
     m_loggers[name] = logger;
     return logger;
   }
+  std::string LoggerManager::toYamlString()
+  {
+    MutexType::Lock lock(m_mutex);
+    YAML::Node node;
+    for (auto &i : m_loggers)
+    {
+      node.push_back(YAML::Load(i.second->toYamlString()));
+    }
+    std::stringstream ss;
+    ss << node;
+    return ss.str();
+  }
+
+  void LoggerManager::init()
+  {
+  }
+
 }
